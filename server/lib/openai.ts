@@ -70,13 +70,8 @@ Remember: Respond ONLY with valid JSON in the specified format.`
           max_completion_tokens: 4096,
           response_format: { type: "json_object" }
         });
-        console.log("[OpenAI] Received response, parsing...");
-        console.log("[OpenAI] Response structure:", JSON.stringify(response, null, 2));
-        
         const content = response.choices[0]?.message?.content;
-        console.log("[OpenAI] Content from response:", content);
         if (!content) {
-          console.error("[OpenAI] No content in response! Returning fallback.");
           return {
             summary: "I apologize, but I couldn't generate a response. Please try again.",
             bullets: [],
@@ -85,7 +80,6 @@ Remember: Respond ONLY with valid JSON in the specified format.`
         }
 
         const parsed = JSON.parse(content);
-        console.log("[OpenAI] Parsed response:", parsed);
         return {
           summary: parsed.summary || "Unable to process the response.",
           bullets: Array.isArray(parsed.bullets) ? parsed.bullets : [],

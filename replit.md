@@ -8,6 +8,16 @@ MITS Assistant is a conversational AI chatbot designed for Madhav Institute of T
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### November 11, 2025
+- **Token Limit Fix**: Increased `max_completion_tokens` from 1000 to 4096 to accommodate GPT-5's reasoning tokens. GPT-5 uses internal reasoning before generating responses, which was consuming all available tokens and leaving none for the actual response content.
+- **Structured Response System**: Implemented JSON-based response format with summary, bullets, and hasAnswer fields. Backend parses OpenAI's structured output and frontend renders with proper typography hierarchy.
+- **Citation System**: Added deterministic source citations using the retrieved context URLs. Sources appear as clickable links only when the bot has an answer (hasAnswer=true).
+- **Content Seeding**: Added automatic seeding of 6 MITS pages on server startup (About, Admissions, Departments, Facilities, Contact, Placements).
+- **Dark Mode**: Implemented theme toggle with educational blue color scheme that works in both light and dark modes.
+- **End-to-End Testing**: All tests passing including structured responses, citation handling, out-of-domain questions, and theme switching.
+
 ## System Architecture
 
 ### Frontend Architecture
