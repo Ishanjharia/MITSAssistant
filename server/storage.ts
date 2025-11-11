@@ -1,37 +1,48 @@
-import { type User, type InsertUser } from "@shared/schema";
+import { type ScrapedContent, type InsertScrapedContent } from "@shared/schema";
 import { randomUUID } from "crypto";
 
-// modify the interface with any CRUD methods
-// you might need
-
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getScrapedContent(url: string): Promise<ScrapedContent | undefined>;
+  getAllScrapedContent(): Promise<ScrapedContent[]>;
+  createScrapedContent(content: InsertScrapedContent): Promise<ScrapedContent>;
+  updateScrapedContent(url: string, content: InsertScrapedContent): Promise<ScrapedContent>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private scrapedContent: Map<string, ScrapedContent>;
 
   constructor() {
-    this.users = new Map();
+    this.scrapedContent = new Map();
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getScrapedContent(url: string): Promise<ScrapedContent | undefined> {
+    return this.scrapedContent.get(url);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getAllScrapedContent(): Promise<ScrapedContent[]> {
+    return Array.from(this.scrapedContent.values());
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createScrapedContent(insertContent: InsertScrapedContent): Promise<ScrapedContent> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const content: ScrapedContent = {
+      ...insertContent,
+      id,
+      scrapedAt: new Date(),
+    };
+    this.scrapedContent.set(insertContent.url, content);
+    return content;
+  }
+
+  async updateScrapedContent(url: string, insertContent: InsertScrapedContent): Promise<ScrapedContent> {
+    const id = randomUUID();
+    const content: ScrapedContent = {
+      ...insertContent,
+      id,
+      scrapedAt: new Date(),
+    };
+    this.scrapedContent.set(url, content);
+    return content;
   }
 }
 
