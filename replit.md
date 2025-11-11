@@ -16,7 +16,10 @@ Preferred communication style: Simple, everyday language.
 - **Citation System**: Added deterministic source citations using the retrieved context URLs. Sources appear as clickable links only when the bot has an answer (hasAnswer=true).
 - **Content Seeding**: Added automatic seeding of 6 MITS pages on server startup (About, Admissions, Departments, Facilities, Contact, Placements).
 - **Dark Mode**: Implemented theme toggle with educational blue color scheme that works in both light and dark modes.
-- **End-to-End Testing**: All tests passing including structured responses, citation handling, out-of-domain questions, and theme switching.
+- **Quick Action Buttons**: Added 8 quick-action buttons for common queries (Admissions, Contact, Departments, Placements, Facilities, Campus Life, Labs, Sports).
+- **Admin Panel**: Built admin interface with header-based authentication for managing scraped content with manual refresh capability and graceful network error handling (503 responses).
+- **Database Migration**: Migrated from in-memory storage to PostgreSQL with Drizzle ORM. All scraped content, conversation sessions, and chat messages now persist in database.
+- **Conversation History**: Implemented session management with localStorage persistence. Users can resume conversations after page refresh. New Chat button starts fresh sessions. Messages stored in PostgreSQL with jsonb sources column.
 
 ## System Architecture
 
