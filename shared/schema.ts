@@ -60,8 +60,10 @@ export type Message = {
 
 export type ChatRequest = {
   message: string;
+  sessionId?: string;
 };
 
 export type ChatResponse = {
   message: Message;
+  sessionId: string;
 };

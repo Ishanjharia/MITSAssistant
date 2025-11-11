@@ -21,6 +21,7 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
 
 const chatRequestSchema = z.object({
   message: z.string().min(1).max(1000),
+  sessionId: z.string().optional(),
 });
 
 const scrapeRequestSchema = z.object({
@@ -32,7 +33,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/chat", async (req, res) => {
     try {
       console.log("[Chat API] Received message:", req.body.message);
-      const { message } = chatRequestSchema.parse(req.body);
+      const { message, sessionId } = chatRequestSchema.parse(req.body);
+
+      let currentSessionId = sessionId;
+      if (!currentSessionId) {
+        const newSession = await storage.createSession();
+        currentSessionId = newSession.id;
+      }
+
+      const userMessageId = randomUUID();
+      await storage.createMessage({
+        sessionId: currentSessionId,
+        role: "user",
+        content: message,
+      });
 
       const allContent = await storage.getAllScrapedContent();
 
@@ -44,7 +58,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           timestamp: new Date(),
         };
         
-        return res.json({ message: errorMessage } as ChatResponse);
+        await storage.createMessage({
+          sessionId: currentSessionId,
+          role: "assistant",
+          content: errorMessage.content,
+        });
+        
+        return res.json({ 
+          message: errorMessage,
+          sessionId: currentSessionId 
+        } as ChatResponse);
       }
 
       const relevantContent = findRelevantContent(
@@ -91,7 +114,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sources: structuredResponse.hasAnswer && sources.length > 0 ? sources : undefined,
       };
 
-      res.json({ message: assistantMessage } as ChatResponse);
+      await storage.createMessage({
+        sessionId: currentSessionId,
+        role: "assistant",
+        content: assistantMessage.content,
+        sources: assistantMessage.sources as any,
+      });
+
+      res.json({ 
+        message: assistantMessage,
+        sessionId: currentSessionId 
+      } as ChatResponse);
     } catch (error: any) {
       console.error("Chat error:", error);
       res.status(500).json({ 
@@ -182,6 +215,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Get content error:", error);
       res.status(500).json({ 
         error: error.message || "Failed to get content" 
+      });
+    }
+  });
+
+  app.get("/api/history/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const messages = await storage.getSessionMessages(sessionId);
+      
+      const formattedMessages: Message[] = messages.map(msg => ({
+        id: msg.id,
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+        timestamp: msg.timestamp,
+        sources: msg.sources as Array<{ title: string; url: string }> | undefined,
+      }));
+      
+      res.json(formattedMessages);
+    } catch (error: any) {
+      console.error("Get history error:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to get conversation history" 
       });
     }
   });
