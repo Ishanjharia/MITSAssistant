@@ -1,5 +1,6 @@
-import { GraduationCap, BookOpen, Calendar, Mail, MapPin } from "lucide-react";
+import { GraduationCap, BookOpen, Calendar, Mail, MapPin, Users, Building2, Trophy, Briefcase, Coffee } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface EmptyStateProps {
   onQuestionClick: (question: string) => void;
@@ -26,6 +27,17 @@ const exampleQuestions = [
     text: "How do I contact the college?",
     question: "What is the contact information for MITS Gwalior?",
   },
+];
+
+const quickActions = [
+  { label: "Admissions", icon: GraduationCap, question: "Tell me about the admission process for B.Tech" },
+  { label: "Contact Info", icon: Mail, question: "How can I contact MITS Gwalior?" },
+  { label: "Departments", icon: Building2, question: "What departments and branches are available?" },
+  { label: "Placements", icon: Briefcase, question: "What are the placement statistics and top recruiters?" },
+  { label: "Facilities", icon: MapPin, question: "What facilities are available on campus?" },
+  { label: "Campus Life", icon: Coffee, question: "What is campus life like at MITS? Tell me about student activities and culture" },
+  { label: "Fee Structure", icon: BookOpen, question: "What is the fee structure for B.Tech programs?" },
+  { label: "Hostel", icon: Users, question: "Tell me about hostel facilities and accommodation" },
 ];
 
 export function EmptyState({ onQuestionClick }: EmptyStateProps) {
@@ -68,6 +80,27 @@ export function EmptyState({ onQuestionClick }: EmptyStateProps) {
               </Card>
             );
           })}
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-foreground">Quick Actions</p>
+          <div className="flex flex-wrap gap-2">
+            {quickActions.map((action, idx) => {
+              const Icon = action.icon;
+              return (
+                <Badge
+                  key={idx}
+                  variant="secondary"
+                  className="px-3 py-2 cursor-pointer hover-elevate active-elevate-2 gap-1.5"
+                  onClick={() => onQuestionClick(action.question)}
+                  data-testid={`quick-action-${idx}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{action.label}</span>
+                </Badge>
+              );
+            })}
+          </div>
         </div>
 
         <div className="pt-4 text-center">
