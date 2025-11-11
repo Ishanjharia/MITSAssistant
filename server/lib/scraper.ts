@@ -7,6 +7,13 @@ export interface ScrapeResult {
   content: string;
 }
 
+export class NetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NetworkError";
+  }
+}
+
 export async function scrapePage(url: string): Promise<ScrapeResult> {
   try {
     const response = await axios.get(url, {
@@ -49,6 +56,15 @@ export async function scrapePage(url: string): Promise<ScrapeResult> {
       content: content.slice(0, 10000)
     };
   } catch (error: any) {
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+      throw new NetworkError(`Cannot reach ${url}. Please check your network connection or verify the URL is accessible.`);
+    }
+    if (error.response?.status === 404) {
+      throw new NetworkError(`Page not found: ${url}`);
+    }
+    if (error.response?.status >= 500) {
+      throw new NetworkError(`Server error when accessing ${url}. Please try again later.`);
+    }
     throw new Error(`Failed to scrape ${url}: ${error.message}`);
   }
 }

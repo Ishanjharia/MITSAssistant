@@ -1,11 +1,23 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openai, generateChatResponse } from "./lib/openai";
-import { scrapePage, findRelevantContent } from "./lib/scraper";
+import { scrapePage, findRelevantContent, NetworkError } from "./lib/scraper";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 import type { ChatRequest, ChatResponse, Message } from "@shared/schema";
+
+const ADMIN_KEY = process.env.ADMIN_KEY || "dev-admin-key-12345";
+
+function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const adminKey = req.headers["x-admin-key"];
+  
+  if (adminKey !== ADMIN_KEY) {
+    return res.status(403).json({ error: "Forbidden: Admin access required" });
+  }
+  
+  next();
+}
 
 const chatRequestSchema = z.object({
   message: z.string().min(1).max(1000),
@@ -88,7 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/scrape", async (req, res) => {
+  app.post("/api/scrape", requireAdmin, async (req, res) => {
     try {
       const { url } = scrapeRequestSchema.parse(req.body);
 
@@ -114,13 +126,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(savedContent);
     } catch (error: any) {
       console.error("Scrape error:", error);
+      
+      if (error instanceof NetworkError) {
+        return res.status(503).json({ 
+          error: error.message,
+          type: "network_error"
+        });
+      }
+      
       res.status(500).json({ 
         error: error.message || "Failed to scrape page" 
       });
     }
   });
 
-  app.get("/api/content", async (_req, res) => {
+  app.post("/api/scrape/refresh", requireAdmin, async (req, res) => {
+    try {
+      const { url } = scrapeRequestSchema.parse(req.body);
+
+      const existing = await storage.getScrapedContent(url);
+      if (!existing) {
+        return res.status(404).json({ error: "URL not found in content library" });
+      }
+
+      const result = await scrapePage(url);
+
+      const updatedContent = await storage.updateScrapedContent(url, {
+        url: result.url,
+        title: result.title,
+        content: result.content,
+      });
+
+      res.json(updatedContent);
+    } catch (error: any) {
+      console.error("Refresh error:", error);
+      
+      if (error instanceof NetworkError) {
+        return res.status(503).json({ 
+          error: error.message,
+          type: "network_error"
+        });
+      }
+      
+      res.status(500).json({ 
+        error: error.message || "Failed to refresh page content" 
+      });
+    }
+  });
+
+  app.get("/api/content", requireAdmin, async (_req, res) => {
     try {
       const allContent = await storage.getAllScrapedContent();
       res.json(allContent);
